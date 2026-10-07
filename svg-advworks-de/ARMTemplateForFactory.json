@@ -135,75 +135,219 @@
 							},
 							"activities": [
 								{
-									"name": "CP_IngestToADLS",
-									"type": "Copy",
+									"name": "SW_LoadType",
+									"type": "Switch",
 									"dependsOn": [],
-									"policy": {
-										"timeout": "0.12:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
 									"userProperties": [],
 									"typeProperties": {
-										"source": {
-											"type": "SqlServerSource",
-											"queryTimeout": "02:00:00",
-											"partitionOption": "None"
+										"on": {
+											"value": "@item().LoadType",
+											"type": "Expression"
 										},
-										"sink": {
-											"type": "ParquetSink",
-											"storeSettings": {
-												"type": "AzureBlobFSWriteSettings"
+										"cases": [
+											{
+												"value": "FULL",
+												"activities": [
+													{
+														"name": "CP_Full_To_ADLS",
+														"type": "Copy",
+														"dependsOn": [],
+														"policy": {
+															"timeout": "0.12:00:00",
+															"retry": 0,
+															"retryIntervalInSeconds": 30,
+															"secureOutput": false,
+															"secureInput": false
+														},
+														"userProperties": [],
+														"typeProperties": {
+															"source": {
+																"type": "SqlServerSource",
+																"queryTimeout": "02:00:00",
+																"partitionOption": "None"
+															},
+															"sink": {
+																"type": "ParquetSink",
+																"storeSettings": {
+																	"type": "AzureBlobFSWriteSettings"
+																},
+																"formatSettings": {
+																	"type": "ParquetWriteSettings"
+																}
+															},
+															"enableStaging": false,
+															"translator": {
+																"type": "TabularTranslator",
+																"typeConversion": true,
+																"typeConversionSettings": {
+																	"allowDataTruncation": true,
+																	"treatBooleanAsNumber": false
+																}
+															}
+														},
+														"inputs": [
+															{
+																"referenceName": "DS_SQL_AdventureWorks",
+																"type": "DatasetReference",
+																"parameters": {
+																	"SchemaName": {
+																		"value": "@item().SourceSchema",
+																		"type": "Expression"
+																	},
+																	"TableName": {
+																		"value": "@item().SourceTable",
+																		"type": "Expression"
+																	}
+																}
+															}
+														],
+														"outputs": [
+															{
+																"referenceName": "DS_ADLS_Parquet",
+																"type": "DatasetReference",
+																"parameters": {
+																	"ContainerName": "adventureworks",
+																	"FolderPath": {
+																		"value": "@if(\n    startsWith(item().TargetFolder,'/'),\n    concat(\n        substring(item().TargetFolder,1,sub(length(item().TargetFolder),1)),\n        formatDateTime(utcnow(),'yyyy/MM/dd')\n    ),\n    concat(\n        item().TargetFolder,\n        formatDateTime(utcnow(),'yyyy/MM/dd')\n    )\n)",
+																		"type": "Expression"
+																	},
+																	"FileName": {
+																		"value": "@concat(\n    item().SourceTable,\n    '_',\n    formatDateTime(utcnow(),'yyyyMMdd_HHmmss'),\n    '.parquet'\n)",
+																		"type": "Expression"
+																	}
+																}
+															}
+														]
+													}
+												]
 											},
-											"formatSettings": {
-												"type": "ParquetWriteSettings"
+											{
+												"value": "INCREMENTAL",
+												"activities": [
+													{
+														"name": "CP_Incremental_To_ADLS",
+														"type": "Copy",
+														"dependsOn": [
+															{
+																"activity": "LKP_CurrentWatermark_copy",
+																"dependencyConditions": [
+																	"Succeeded"
+																]
+															}
+														],
+														"policy": {
+															"timeout": "0.12:00:00",
+															"retry": 0,
+															"retryIntervalInSeconds": 30,
+															"secureOutput": false,
+															"secureInput": false
+														},
+														"userProperties": [],
+														"typeProperties": {
+															"source": {
+																"type": "SqlServerSource",
+																"sqlReaderQuery": {
+																	"value": "@concat(\n    'SELECT * FROM [',\n    item().SourceSchema,\n    '].[',\n    item().SourceTable,\n    '] WHERE [',\n    item().WatermarkColumn,\n    '] > ''',\n    item().LastWatermarkValue,\n    ''' AND [',\n    item().WatermarkColumn,\n    '] <= (SELECT MAX([',\n    item().WatermarkColumn,\n    ']) FROM [',\n    item().SourceSchema,\n    '].[',\n    item().SourceTable,\n    '])'\n)",
+																	"type": "Expression"
+																},
+																"queryTimeout": "02:00:00",
+																"partitionOption": "None"
+															},
+															"sink": {
+																"type": "ParquetSink",
+																"storeSettings": {
+																	"type": "AzureBlobFSWriteSettings"
+																},
+																"formatSettings": {
+																	"type": "ParquetWriteSettings"
+																}
+															},
+															"enableStaging": false,
+															"translator": {
+																"type": "TabularTranslator",
+																"typeConversion": true,
+																"typeConversionSettings": {
+																	"allowDataTruncation": true,
+																	"treatBooleanAsNumber": false
+																}
+															}
+														},
+														"inputs": [
+															{
+																"referenceName": "DS_SQL_AdventureWorks",
+																"type": "DatasetReference",
+																"parameters": {
+																	"SchemaName": {
+																		"value": "@item().SourceSchema",
+																		"type": "Expression"
+																	},
+																	"TableName": {
+																		"value": "@item().SourceTable",
+																		"type": "Expression"
+																	}
+																}
+															}
+														],
+														"outputs": [
+															{
+																"referenceName": "DS_ADLS_Parquet",
+																"type": "DatasetReference",
+																"parameters": {
+																	"ContainerName": "adventureworks",
+																	"FolderPath": {
+																		"value": "@if(\n    startsWith(item().TargetFolder,'/'),\n    concat(\n        substring(item().TargetFolder,1,sub(length(item().TargetFolder),1)),\n        formatDateTime(utcnow(),'yyyy/MM/dd')\n    ),\n    concat(\n        item().TargetFolder,\n        formatDateTime(utcnow(),'yyyy/MM/dd')\n    )\n)",
+																		"type": "Expression"
+																	},
+																	"FileName": {
+																		"value": "@concat(\n    item().SourceTable,\n    '_',\n    formatDateTime(utcnow(),'yyyyMMdd_HHmmss'),\n    '.parquet'\n)",
+																		"type": "Expression"
+																	}
+																}
+															}
+														]
+													},
+													{
+														"name": "LKP_CurrentWatermark_copy",
+														"type": "Lookup",
+														"dependsOn": [],
+														"policy": {
+															"timeout": "0.12:00:00",
+															"retry": 0,
+															"retryIntervalInSeconds": 30,
+															"secureOutput": false,
+															"secureInput": false
+														},
+														"userProperties": [],
+														"typeProperties": {
+															"source": {
+																"type": "SqlServerSource",
+																"sqlReaderQuery": {
+																	"value": "@concat(\n    'SELECT MAX([',\n    item().WatermarkColumn,\n    ']) AS CurrentWatermark FROM [',\n    item().SourceSchema,\n    '].[',\n    item().SourceTable,\n    ']'\n)",
+																	"type": "Expression"
+																},
+																"queryTimeout": "02:00:00",
+																"partitionOption": "None"
+															},
+															"dataset": {
+																"referenceName": "DS_SQL_AdventureWorks",
+																"type": "DatasetReference",
+																"parameters": {
+																	"SchemaName": {
+																		"value": "@item().SourceSchema",
+																		"type": "Expression"
+																	},
+																	"TableName": {
+																		"value": "@item().SourceTable",
+																		"type": "Expression"
+																	}
+																}
+															}
+														}
+													}
+												]
 											}
-										},
-										"enableStaging": false,
-										"translator": {
-											"type": "TabularTranslator",
-											"typeConversion": true,
-											"typeConversionSettings": {
-												"allowDataTruncation": true,
-												"treatBooleanAsNumber": false
-											}
-										}
-									},
-									"inputs": [
-										{
-											"referenceName": "DS_SQL_AdventureWorks",
-											"type": "DatasetReference",
-											"parameters": {
-												"SchemaName": {
-													"value": "@item().SourceSchema",
-													"type": "Expression"
-												},
-												"TableName": {
-													"value": "@item().SourceTable",
-													"type": "Expression"
-												}
-											}
-										}
-									],
-									"outputs": [
-										{
-											"referenceName": "DS_ADLS_Parquet",
-											"type": "DatasetReference",
-											"parameters": {
-												"ContainerName": "adventureworks",
-												"FolderPath": {
-													"value": "@concat(\n    if(\n        startsWith(item().TargetFolder,'/'),\n        substring(item().TargetFolder,1,sub(length(item().TargetFolder),1)),\n        item().TargetFolder\n    ),\n    formatDateTime(utcnow(),'yyyy/MM/dd')\n)",
-													"type": "Expression"
-												},
-												"FileName": {
-													"value": "@concat(\n    item().SourceTable,\n    '_',\n    formatDateTime(utcnow(),'yyyyMMdd_HHmmss'),\n    '.parquet'\n)",
-													"type": "Expression"
-												}
-											}
-										}
-									]
+										]
+									}
 								}
 							]
 						}
