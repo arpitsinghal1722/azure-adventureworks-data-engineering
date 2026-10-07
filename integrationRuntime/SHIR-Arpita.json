@@ -1,0 +1,12 @@
+{
+	"name": "SHIR-Arpita",
+	"properties": {
+		"type": "SelfHosted",
+		"typeProperties": {
+			"linkedInfo": {
+				"resourceId": "/subscriptions/d197dba8-0a2f-4b7f-9441-6bc6982d2d1a/resourcegroups/adfArpita/providers/Microsoft.DataFactory/factories/adf-arpita-aw/integrationruntimes/SHIR-Arpita",
+				"authorizationType": "Rbac"
+			}
+		}
+	}
+}
