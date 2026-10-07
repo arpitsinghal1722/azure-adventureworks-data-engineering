@@ -236,7 +236,10 @@
 												"typeProperties": {
 													"source": {
 														"type": "SqlServerSource",
-														"sqlReaderQuery": "@concat(\n    'SELECT MAX([',\n    item().WatermarkColumn,\n    ']) AS CurrentWatermark FROM [',\n    item().SourceSchema,\n    '].[',\n    item().SourceTable,\n    ']'\n)",
+														"sqlReaderQuery": {
+															"value": "@concat(\n    'SELECT MAX([',\n    item().WatermarkColumn,\n    ']) AS CurrentWatermark FROM [',\n    item().SourceSchema,\n    '].[',\n    item().SourceTable,\n    ']'\n)",
+															"type": "Expression"
+														},
 														"queryTimeout": "02:00:00",
 														"partitionOption": "None"
 													},
