@@ -13,7 +13,23 @@
 					"secureOutput": false,
 					"secureInput": false
 				},
-				"userProperties": []
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"sqlReaderQuery": {
+							"value": "SELECT *\nFROM dbo.IngestionConfig\nWHERE IsActive = 1\n  AND SourceSystem = 'OnPremSQL';",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_SQL_Metadata",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
 			},
 			{
 				"name": "FE_ProcessIngestion",
@@ -46,8 +62,63 @@
 							},
 							"userProperties": [],
 							"typeProperties": {
-								"enableStaging": false
-							}
+								"source": {
+									"type": "SqlServerSource",
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_SQL_AdventureWorks",
+									"type": "DatasetReference",
+									"parameters": {
+										"SchemaName": {
+											"value": "@item().SourceSchema",
+											"type": "Expression"
+										},
+										"TableName": {
+											"value": "@item().SourceTable",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_ADLS_Parquet",
+									"type": "DatasetReference",
+									"parameters": {
+										"ContainerName": "adventureworks",
+										"FolderPath": {
+											"value": "@concat(\n    if(\n        startsWith(item().TargetFolder,'/'),\n        substring(item().TargetFolder,1,sub(length(item().TargetFolder),1)),\n        item().TargetFolder\n    ),\n    formatDateTime(utcnow(),'yyyy/MM/dd')\n)",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@concat(\n    item().SourceTable,\n    '_',\n    formatDateTime(utcnow(),'yyyyMMdd_HHmmss'),\n    '.parquet'\n)",
+											"type": "Expression"
+										}
+									}
+								}
+							]
 						}
 					]
 				}
