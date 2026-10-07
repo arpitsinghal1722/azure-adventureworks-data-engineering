@@ -1,0 +1,15 @@
+{
+	"name": "svg-advworks-de",
+	"properties": {
+		"trustModeClaimForMi": {
+			"value": "Disabled",
+			"editable": true
+		}
+	},
+	"location": "eastasia",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "368b428b-8836-4341-ac1c-99789929a468",
+		"tenantId": "84378c14-831d-4c49-a085-aa6c8290b732"
+	}
+}
