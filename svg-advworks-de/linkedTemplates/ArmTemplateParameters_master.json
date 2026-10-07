@@ -1,0 +1,54 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "svg-advworks-de"
+		},
+		"LS_ADLS_AdventureWorks_accountKey": {
+			"value": ""
+		},
+		"LS_AzureSQL_AdventureWorks_password": {
+			"value": ""
+		},
+		"LS_SQL_AdventureWorks_password": {
+			"value": ""
+		},
+		"AzureDatabricks1_accessToken": {
+			"value": ""
+		},
+		"LS_ADLS_AdventureWorks_properties_typeProperties_url": {
+			"value": "https://dfprostorage17.dfs.core.windows.net/"
+		},
+		"LS_AzureSQL_AdventureWorks_properties_typeProperties_server": {
+			"value": "sql-advworks-de17.database.windows.net"
+		},
+		"LS_AzureSQL_AdventureWorks_properties_typeProperties_database": {
+			"value": "AdventureWorksAzure"
+		},
+		"LS_AzureSQL_AdventureWorks_properties_typeProperties_userName": {
+			"value": "sqladminarpita"
+		},
+		"LS_REST_ExchangeRates_properties_typeProperties_url": {
+			"value": "https://api.frankfurter.dev"
+		},
+		"LS_SQL_AdventureWorks_properties_typeProperties_server": {
+			"value": "localhost\\SQLEXPRESS"
+		},
+		"LS_SQL_AdventureWorks_properties_typeProperties_database": {
+			"value": "AdventureWorks2025"
+		},
+		"LS_SQL_AdventureWorks_properties_typeProperties_userName": {
+			"value": "ADF_AdventureWorks"
+		},
+		"SHIR-Arpita_properties_typeProperties_linkedInfo_resourceId": {
+			"value": "/subscriptions/d197dba8-0a2f-4b7f-9441-6bc6982d2d1a/resourcegroups/adfArpita/providers/Microsoft.DataFactory/factories/adf-arpita-aw/integrationruntimes/SHIR-Arpita"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}
