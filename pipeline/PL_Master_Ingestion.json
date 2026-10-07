@@ -1,0 +1,58 @@
+{
+	"name": "PL_Master_Ingestion",
+	"properties": {
+		"activities": [
+			{
+				"name": "LKP_IngestionConfig",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": []
+			},
+			{
+				"name": "FE_ProcessIngestion",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "LKP_IngestionConfig",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('LKP_IngestionConfig').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "CP_IngestToADLS",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"enableStaging": false
+							}
+						}
+					]
+				}
+			}
+		],
+		"annotations": []
+	}
+}
