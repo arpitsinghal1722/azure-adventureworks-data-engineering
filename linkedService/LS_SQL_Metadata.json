@@ -1,0 +1,21 @@
+{
+	"name": "LS_SQL_Metadata",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "SqlServer",
+		"typeProperties": {
+			"server": "localhost\\SQLEXPRESS",
+			"database": "AdventureWorksTarget",
+			"encrypt": "mandatory",
+			"trustServerCertificate": true,
+			"authenticationType": "SQL",
+			"userName": "ADF_AdventureWorks",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiIyNDI0ZmM1My1jNWQxLTRjNmEtYmZkOS03NjVkODQzMzc3NmYiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "SHIR-Arpita",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}
