@@ -7,6 +7,10 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "svg-advworks-de"
 		},
+		"AzureDatabricks1_accessToken": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accessToken' of 'AzureDatabricks1'"
+		},
 		"LS_ADLS_AdventureWorks_accountKey": {
 			"type": "secureString",
 			"metadata": "Secure string for 'accountKey' of 'LS_ADLS_AdventureWorks'"
@@ -19,9 +23,9 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'password' of 'LS_SQL_AdventureWorks'"
 		},
-		"AzureDatabricks1_accessToken": {
+		"LS_SQL_Metadata_password": {
 			"type": "secureString",
-			"metadata": "Secure string for 'accessToken' of 'AzureDatabricks1'"
+			"metadata": "Secure string for 'password' of 'LS_SQL_Metadata'"
 		},
 		"LS_ADLS_AdventureWorks_properties_typeProperties_url": {
 			"type": "string",
@@ -52,6 +56,18 @@
 			"defaultValue": "AdventureWorks2025"
 		},
 		"LS_SQL_AdventureWorks_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "ADF_AdventureWorks"
+		},
+		"LS_SQL_Metadata_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "localhost\\SQLEXPRESS"
+		},
+		"LS_SQL_Metadata_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "AdventureWorksTarget"
+		},
+		"LS_SQL_Metadata_properties_typeProperties_userName": {
 			"type": "string",
 			"defaultValue": "ADF_AdventureWorks"
 		},
@@ -86,17 +102,20 @@
 					"factoryName": {
 						"value": "[parameters('factoryName')]"
 					},
+					"AzureDatabricks1_accessToken": {
+						"value": "[parameters('AzureDatabricks1_accessToken')]"
+					},
 					"LS_ADLS_AdventureWorks_accountKey": {
 						"value": "[parameters('LS_ADLS_AdventureWorks_accountKey')]"
 					},
 					"LS_AzureSQL_AdventureWorks_password": {
 						"value": "[parameters('LS_AzureSQL_AdventureWorks_password')]"
 					},
-					"AzureDatabricks1_accessToken": {
-						"value": "[parameters('AzureDatabricks1_accessToken')]"
-					},
 					"LS_SQL_AdventureWorks_password": {
 						"value": "[parameters('LS_SQL_AdventureWorks_password')]"
+					},
+					"LS_SQL_Metadata_password": {
+						"value": "[parameters('LS_SQL_Metadata_password')]"
 					},
 					"LS_ADLS_AdventureWorks_properties_typeProperties_url": {
 						"value": "[parameters('LS_ADLS_AdventureWorks_properties_typeProperties_url')]"
@@ -124,6 +143,15 @@
 					},
 					"LS_SQL_AdventureWorks_properties_typeProperties_userName": {
 						"value": "[parameters('LS_SQL_AdventureWorks_properties_typeProperties_userName')]"
+					},
+					"LS_SQL_Metadata_properties_typeProperties_server": {
+						"value": "[parameters('LS_SQL_Metadata_properties_typeProperties_server')]"
+					},
+					"LS_SQL_Metadata_properties_typeProperties_database": {
+						"value": "[parameters('LS_SQL_Metadata_properties_typeProperties_database')]"
+					},
+					"LS_SQL_Metadata_properties_typeProperties_userName": {
+						"value": "[parameters('LS_SQL_Metadata_properties_typeProperties_userName')]"
 					}
 				}
 			},

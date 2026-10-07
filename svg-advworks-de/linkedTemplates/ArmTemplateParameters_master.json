@@ -5,6 +5,9 @@
 		"factoryName": {
 			"value": "svg-advworks-de"
 		},
+		"AzureDatabricks1_accessToken": {
+			"value": ""
+		},
 		"LS_ADLS_AdventureWorks_accountKey": {
 			"value": ""
 		},
@@ -14,7 +17,7 @@
 		"LS_SQL_AdventureWorks_password": {
 			"value": ""
 		},
-		"AzureDatabricks1_accessToken": {
+		"LS_SQL_Metadata_password": {
 			"value": ""
 		},
 		"LS_ADLS_AdventureWorks_properties_typeProperties_url": {
@@ -39,6 +42,15 @@
 			"value": "AdventureWorks2025"
 		},
 		"LS_SQL_AdventureWorks_properties_typeProperties_userName": {
+			"value": "ADF_AdventureWorks"
+		},
+		"LS_SQL_Metadata_properties_typeProperties_server": {
+			"value": "localhost\\SQLEXPRESS"
+		},
+		"LS_SQL_Metadata_properties_typeProperties_database": {
+			"value": "AdventureWorksTarget"
+		},
+		"LS_SQL_Metadata_properties_typeProperties_userName": {
 			"value": "ADF_AdventureWorks"
 		},
 		"SHIR-Arpita_properties_typeProperties_linkedInfo_resourceId": {
