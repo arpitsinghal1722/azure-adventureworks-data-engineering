@@ -8,10 +8,7 @@
 		"annotations": [],
 		"type": "RestResource",
 		"typeProperties": {
-			"relativeUrl": {
-				"value": "latest?from=USD",
-				"type": "Expression"
-			}
+			"relativeUrl": "v1/latest?from=USD"
 		},
 		"schema": []
 	}
