@@ -359,7 +359,7 @@
 												"type": "SqlServerStoredProcedure",
 												"dependsOn": [
 													{
-														"activity": "CP_AzureSQL_Incremental_To_ADLS",
+														"activity": "LKP_NewWatermark",
 														"dependencyConditions": [
 															"Succeeded"
 														]
@@ -384,7 +384,10 @@
 															"type": "Int32"
 														},
 														"NewWatermarkValue": {
-															"value": "",
+															"value": {
+																"value": "@string(activity('LKP_NewWatermark').output.firstRow.NewWatermark)",
+																"type": "Expression"
+															},
 															"type": "String"
 														}
 													}
@@ -392,6 +395,45 @@
 												"linkedServiceName": {
 													"referenceName": "LS_SQL_Metadata",
 													"type": "LinkedServiceReference"
+												}
+											},
+											{
+												"name": "LKP_NewWatermark",
+												"type": "Lookup",
+												"dependsOn": [
+													{
+														"activity": "CP_AzureSQL_Incremental_To_ADLS",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"source": {
+														"type": "AzureSqlSource",
+														"sqlReaderQuery": {
+															"value": "@concat(\n    'SELECT MAX([',\n    item().WatermarkColumn,\n    ']) AS NewWatermark FROM [',\n    item().SourceSchema,\n    '].[',\n    item().SourceTable,\n    ']'\n)",
+															"type": "Expression"
+														},
+														"queryTimeout": "02:00:00",
+														"partitionOption": "None"
+													},
+													"dataset": {
+														"referenceName": "DS_AzureSQL_AdventureWorks",
+														"type": "DatasetReference",
+														"parameters": {
+															"Schemaname": "dbo",
+															"TableName": "SalesOrderHeader"
+														}
+													}
 												}
 											}
 										]
