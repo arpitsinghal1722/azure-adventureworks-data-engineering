@@ -102,7 +102,7 @@
 							"source": {
 								"type": "SqlServerSource",
 								"sqlReaderQuery": {
-									"value": "SELECT *\nFROM dbo.IngestionConfig\nWHERE IsActive = 1\n  AND SourceSystem = 'OnPremSQL';",
+									"value": "SELECT *\nFROM dbo.IngestionConfig\nWHERE IsActive = 1\n  AND SourceSystem = 'AzureSQL';",
 									"type": "Expression"
 								},
 								"queryTimeout": "02:00:00",
@@ -141,12 +141,12 @@
 									"userProperties": [],
 									"typeProperties": {
 										"on": {
-											"value": "@item().LoadType",
+											"value": "@concat(item().SourceSystem,'_',item().LoadType)",
 											"type": "Expression"
 										},
 										"cases": [
 											{
-												"value": "FULL",
+												"value": "OnPremSQL_FULL",
 												"activities": [
 													{
 														"name": "CP_Full_To_ADLS",
@@ -222,19 +222,12 @@
 												]
 											},
 											{
-												"value": "INCREMENTAL",
+												"value": "OnPremSQL_INCREMENTAL",
 												"activities": [
 													{
 														"name": "CP_Incremental_To_ADLS",
 														"type": "Copy",
-														"dependsOn": [
-															{
-																"activity": "LKP_CurrentWatermark_copy",
-																"dependencyConditions": [
-																	"Succeeded"
-																]
-															}
-														],
+														"dependsOn": [],
 														"policy": {
 															"timeout": "0.12:00:00",
 															"retry": 0,
@@ -276,8 +269,75 @@
 															{
 																"referenceName": "DS_SQL_AdventureWorks",
 																"type": "DatasetReference",
+																"parameters": {}
+															}
+														],
+														"outputs": [
+															{
+																"referenceName": "DS_ADLS_Parquet",
+																"type": "DatasetReference",
 																"parameters": {
-																	"SchemaName": {
+																	"ContainerName": "adventureworks",
+																	"FolderPath": {
+																		"value": "@if(\n    startsWith(item().TargetFolder,'/'),\n    concat(\n        substring(item().TargetFolder,1,sub(length(item().TargetFolder),1)),\n        formatDateTime(utcnow(),'yyyy/MM/dd')\n    ),\n    concat(\n        item().TargetFolder,\n        formatDateTime(utcnow(),'yyyy/MM/dd')\n    )\n)",
+																		"type": "Expression"
+																	},
+																	"FileName": {
+																		"value": "@concat(\n    item().SourceTable,\n    '_',\n    formatDateTime(utcnow(),'yyyyMMdd_HHmmss'),\n    '.parquet'\n)",
+																		"type": "Expression"
+																	}
+																}
+															}
+														]
+													}
+												]
+											},
+											{
+												"value": "AzureSQL_FULL",
+												"activities": [
+													{
+														"name": "CP_AzureSQL_Full_To_ADLS",
+														"type": "Copy",
+														"dependsOn": [],
+														"policy": {
+															"timeout": "0.12:00:00",
+															"retry": 0,
+															"retryIntervalInSeconds": 30,
+															"secureOutput": false,
+															"secureInput": false
+														},
+														"userProperties": [],
+														"typeProperties": {
+															"source": {
+																"type": "AzureSqlSource",
+																"queryTimeout": "02:00:00",
+																"partitionOption": "None"
+															},
+															"sink": {
+																"type": "ParquetSink",
+																"storeSettings": {
+																	"type": "AzureBlobFSWriteSettings"
+																},
+																"formatSettings": {
+																	"type": "ParquetWriteSettings"
+																}
+															},
+															"enableStaging": false,
+															"translator": {
+																"type": "TabularTranslator",
+																"typeConversion": true,
+																"typeConversionSettings": {
+																	"allowDataTruncation": true,
+																	"treatBooleanAsNumber": false
+																}
+															}
+														},
+														"inputs": [
+															{
+																"referenceName": "DS_AzureSQL_AdventureWorks",
+																"type": "DatasetReference",
+																"parameters": {
+																	"Schemaname": {
 																		"value": "@item().SourceSchema",
 																		"type": "Expression"
 																	},
@@ -305,10 +365,15 @@
 																}
 															}
 														]
-													},
+													}
+												]
+											},
+											{
+												"value": "AzureSQL_INCREMENTAL",
+												"activities": [
 													{
-														"name": "LKP_CurrentWatermark_copy",
-														"type": "Lookup",
+														"name": "CP_AzureSQL_Incremental_To_ADLS",
+														"type": "Copy",
 														"dependsOn": [],
 														"policy": {
 															"timeout": "0.12:00:00",
@@ -320,29 +385,57 @@
 														"userProperties": [],
 														"typeProperties": {
 															"source": {
-																"type": "SqlServerSource",
+																"type": "AzureSqlSource",
 																"sqlReaderQuery": {
-																	"value": "@concat(\n    'SELECT MAX([',\n    item().WatermarkColumn,\n    ']) AS CurrentWatermark FROM [',\n    item().SourceSchema,\n    '].[',\n    item().SourceTable,\n    ']'\n)",
+																	"value": "@concat(\n    'SELECT * FROM [',\n    item().SourceSchema,\n    '].[',\n    item().SourceTable,\n    '] WHERE [',\n    item().WatermarkColumn,\n    '] > ''',\n    item().LastWatermarkValue,\n    ''' AND [',\n    item().WatermarkColumn,\n    '] <= (SELECT MAX([',\n    item().WatermarkColumn,\n    ']) FROM [',\n    item().SourceSchema,\n    '].[',\n    item().SourceTable,\n    '])'\n)",
 																	"type": "Expression"
 																},
 																"queryTimeout": "02:00:00",
 																"partitionOption": "None"
 															},
-															"dataset": {
-																"referenceName": "DS_SQL_AdventureWorks",
+															"sink": {
+																"type": "ParquetSink",
+																"storeSettings": {
+																	"type": "AzureBlobFSWriteSettings"
+																},
+																"formatSettings": {
+																	"type": "ParquetWriteSettings"
+																}
+															},
+															"enableStaging": false,
+															"translator": {
+																"type": "TabularTranslator",
+																"typeConversion": true,
+																"typeConversionSettings": {
+																	"allowDataTruncation": true,
+																	"treatBooleanAsNumber": false
+																}
+															}
+														},
+														"inputs": [
+															{
+																"referenceName": "DS_AzureSQL_AdventureWorks",
+																"type": "DatasetReference",
+																"parameters": {}
+															}
+														],
+														"outputs": [
+															{
+																"referenceName": "DS_ADLS_Parquet",
 																"type": "DatasetReference",
 																"parameters": {
-																	"SchemaName": {
-																		"value": "@item().SourceSchema",
+																	"ContainerName": "adventureworks",
+																	"FolderPath": {
+																		"value": "@if(\n    startsWith(item().TargetFolder,'/'),\n    concat(\n        substring(item().TargetFolder,1,sub(length(item().TargetFolder),1)),\n        formatDateTime(utcnow(),'yyyy/MM/dd')\n    ),\n    concat(\n        item().TargetFolder,\n        formatDateTime(utcnow(),'yyyy/MM/dd')\n    )\n)",
 																		"type": "Expression"
 																	},
-																	"TableName": {
-																		"value": "@item().SourceTable",
+																	"FileName": {
+																		"value": "@concat(\n    item().SourceTable,\n    '_',\n    formatDateTime(utcnow(),'yyyyMMdd_HHmmss'),\n    '.parquet'\n)",
 																		"type": "Expression"
 																	}
 																}
 															}
-														}
+														]
 													}
 												]
 											}
@@ -361,7 +454,8 @@
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/datasets/DS_SQL_Metadata')]",
 				"[concat(variables('factoryId'), '/datasets/DS_SQL_AdventureWorks')]",
-				"[concat(variables('factoryId'), '/datasets/DS_ADLS_Parquet')]"
+				"[concat(variables('factoryId'), '/datasets/DS_ADLS_Parquet')]",
+				"[concat(variables('factoryId'), '/datasets/DS_AzureSQL_AdventureWorks')]"
 			]
 		},
 		{
@@ -392,15 +486,341 @@
 								"type": "AzureSqlSink",
 								"writeBehavior": "insert",
 								"sqlWriterUseTableLock": false,
-								"tableOption": {
-									"value": "dbo.SalesOrderHeader",
-									"type": "Expression"
-								},
 								"disableMetricsCollection": false
 							},
 							"enableStaging": false,
 							"translator": {
 								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"name": "SalesOrderID",
+											"type": "Int32",
+											"physicalType": "int"
+										},
+										"sink": {
+											"name": "SalesOrderID",
+											"type": "Int32",
+											"physicalType": "int"
+										}
+									},
+									{
+										"source": {
+											"name": "RevisionNumber",
+											"type": "Byte",
+											"physicalType": "tinyint"
+										},
+										"sink": {
+											"name": "RevisionNumber",
+											"type": "Byte",
+											"physicalType": "tinyint"
+										}
+									},
+									{
+										"source": {
+											"name": "OrderDate",
+											"type": "DateTime",
+											"physicalType": "datetime"
+										},
+										"sink": {
+											"name": "OrderDate",
+											"type": "DateTime",
+											"physicalType": "datetime"
+										}
+									},
+									{
+										"source": {
+											"name": "DueDate",
+											"type": "DateTime",
+											"physicalType": "datetime"
+										},
+										"sink": {
+											"name": "DueDate",
+											"type": "DateTime",
+											"physicalType": "datetime"
+										}
+									},
+									{
+										"source": {
+											"name": "ShipDate",
+											"type": "DateTime",
+											"physicalType": "datetime"
+										},
+										"sink": {
+											"name": "ShipDate",
+											"type": "DateTime",
+											"physicalType": "datetime"
+										}
+									},
+									{
+										"source": {
+											"name": "Status",
+											"type": "Byte",
+											"physicalType": "tinyint"
+										},
+										"sink": {
+											"name": "Status",
+											"type": "Byte",
+											"physicalType": "tinyint"
+										}
+									},
+									{
+										"source": {
+											"name": "OnlineOrderFlag",
+											"type": "Boolean",
+											"physicalType": "bit"
+										},
+										"sink": {
+											"name": "OnlineOrderFlag",
+											"type": "Boolean",
+											"physicalType": "bit"
+										}
+									},
+									{
+										"source": {
+											"name": "SalesOrderNumber",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"name": "SalesOrderNumber",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "PurchaseOrderNumber",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"name": "PurchaseOrderNumber",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "AccountNumber",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"name": "AccountNumber",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "CustomerID",
+											"type": "Int32",
+											"physicalType": "int"
+										},
+										"sink": {
+											"name": "CustomerID",
+											"type": "Int32",
+											"physicalType": "int"
+										}
+									},
+									{
+										"source": {
+											"name": "SalesPersonID",
+											"type": "Int32",
+											"physicalType": "int"
+										},
+										"sink": {
+											"name": "SalesPersonID",
+											"type": "Int32",
+											"physicalType": "int"
+										}
+									},
+									{
+										"source": {
+											"name": "TerritoryID",
+											"type": "Int32",
+											"physicalType": "int"
+										},
+										"sink": {
+											"name": "TerritoryID",
+											"type": "Int32",
+											"physicalType": "int"
+										}
+									},
+									{
+										"source": {
+											"name": "BillToAddressID",
+											"type": "Int32",
+											"physicalType": "int"
+										},
+										"sink": {
+											"name": "BillToAddressID",
+											"type": "Int32",
+											"physicalType": "int"
+										}
+									},
+									{
+										"source": {
+											"name": "ShipToAddressID",
+											"type": "Int32",
+											"physicalType": "int"
+										},
+										"sink": {
+											"name": "ShipToAddressID",
+											"type": "Int32",
+											"physicalType": "int"
+										}
+									},
+									{
+										"source": {
+											"name": "ShipMethodID",
+											"type": "Int32",
+											"physicalType": "int"
+										},
+										"sink": {
+											"name": "ShipMethodID",
+											"type": "Int32",
+											"physicalType": "int"
+										}
+									},
+									{
+										"source": {
+											"name": "CreditCardID",
+											"type": "Int32",
+											"physicalType": "int"
+										},
+										"sink": {
+											"name": "CreditCardID",
+											"type": "Int32",
+											"physicalType": "int"
+										}
+									},
+									{
+										"source": {
+											"name": "CreditCardApprovalCode",
+											"type": "String",
+											"physicalType": "varchar"
+										},
+										"sink": {
+											"name": "CreditCardApprovalCode",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									},
+									{
+										"source": {
+											"name": "CurrencyRateID",
+											"type": "Int32",
+											"physicalType": "int"
+										},
+										"sink": {
+											"name": "CurrencyRateID",
+											"type": "Int32",
+											"physicalType": "int"
+										}
+									},
+									{
+										"source": {
+											"name": "SubTotal",
+											"type": "Decimal",
+											"physicalType": "money",
+											"scale": 4,
+											"precision": 19
+										},
+										"sink": {
+											"name": "SubTotal",
+											"type": "Decimal",
+											"physicalType": "money",
+											"scale": 4,
+											"precision": 19
+										}
+									},
+									{
+										"source": {
+											"name": "TaxAmt",
+											"type": "Decimal",
+											"physicalType": "money",
+											"scale": 4,
+											"precision": 19
+										},
+										"sink": {
+											"name": "TaxAmt",
+											"type": "Decimal",
+											"physicalType": "money",
+											"scale": 4,
+											"precision": 19
+										}
+									},
+									{
+										"source": {
+											"name": "Freight",
+											"type": "Decimal",
+											"physicalType": "money",
+											"scale": 4,
+											"precision": 19
+										},
+										"sink": {
+											"name": "Freight",
+											"type": "Decimal",
+											"physicalType": "money",
+											"scale": 4,
+											"precision": 19
+										}
+									},
+									{
+										"source": {
+											"name": "TotalDue",
+											"type": "Decimal",
+											"physicalType": "money",
+											"scale": 4,
+											"precision": 19
+										},
+										"sink": {
+											"name": "TotalDue",
+											"type": "Decimal",
+											"physicalType": "money",
+											"scale": 4,
+											"precision": 19
+										}
+									},
+									{
+										"source": {
+											"name": "Comment",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"name": "Comment",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "rowguid",
+											"type": "Guid",
+											"physicalType": "uniqueidentifier"
+										},
+										"sink": {
+											"name": "rowguid",
+											"type": "Guid",
+											"physicalType": "uniqueidentifier"
+										}
+									},
+									{
+										"source": {
+											"name": "ModifiedDate",
+											"type": "DateTime",
+											"physicalType": "datetime"
+										},
+										"sink": {
+											"name": "ModifiedDate",
+											"type": "DateTime",
+											"physicalType": "datetime"
+										}
+									}
+								],
 								"typeConversion": true,
 								"typeConversionSettings": {
 									"allowDataTruncation": true,
@@ -431,6 +851,67 @@
 										"value": "SalesOrderHeader",
 										"type": "Expression"
 									}
+								}
+							}
+						]
+					},
+					{
+						"name": "CP_Seed_SalesOrderDetail",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "CP_Seed_SalesOrderHeader",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlServerSource",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "AzureSqlSink",
+								"writeBehavior": "insert",
+								"sqlWriterUseTableLock": false
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_SQL_AdventureWorks",
+								"type": "DatasetReference",
+								"parameters": {
+									"SchemaName": "Sales",
+									"TableName": "SalesOrderDetail"
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_AzureSQL_AdventureWorks",
+								"type": "DatasetReference",
+								"parameters": {
+									"Schemaname": "dbo",
+									"TableName": "SalesOrderDetail"
 								}
 							}
 						]
@@ -518,8 +999,14 @@
 				"type": "AzureSqlTable",
 				"schema": [],
 				"typeProperties": {
-					"schema": "dbo",
-					"table": "SalesOrderHeader"
+					"schema": {
+						"value": "@dataset().SchemaName",
+						"type": "Expression"
+					},
+					"table": {
+						"value": "@dataset().TableName",
+						"type": "Expression"
+					}
 				}
 			},
 			"dependsOn": [
