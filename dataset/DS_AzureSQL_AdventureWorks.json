@@ -1,0 +1,26 @@
+{
+	"name": "DS_AzureSQL_AdventureWorks",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_AzureSQL_AdventureWorks",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"Schemaname": {
+				"type": "string",
+				"defaultValue": "dbo"
+			},
+			"TableName": {
+				"type": "string",
+				"defaultValue": "SalesOrderHeader"
+			}
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "SalesOrderHeader"
+		}
+	}
+}
