@@ -52,7 +52,14 @@
 						{
 							"name": "SW_LoadType",
 							"type": "Switch",
-							"dependsOn": [],
+							"dependsOn": [
+								{
+									"activity": "SP_AuditStart",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
 							"userProperties": [],
 							"typeProperties": {
 								"on": {
@@ -943,6 +950,77 @@
 										]
 									}
 								]
+							}
+						},
+						{
+							"name": "SP_AuditStart",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[dbo].[usp_AuditStart]",
+								"storedProcedureParameters": {
+									"LoadType": {
+										"value": {
+											"value": "@item().LoadType",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"PipelineName": {
+										"value": {
+											"value": "@pipeline().Pipeline",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"PipelineRunId": {
+										"value": {
+											"value": "@pipeline().RunId",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"PreviousWatermark": {
+										"value": {
+											"value": "@item().LastWatermarkValue",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"SourceSystem": {
+										"value": {
+											"value": "@item().SourceSystem",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"SourceTable": {
+										"value": {
+											"value": "@item().SourceTable",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"TargetTable": {
+										"value": {
+											"value": "@concat(item().TargetContainer,'/',item().TargetFolder)",
+											"type": "Expression"
+										},
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_SQL_Metadata",
+								"type": "LinkedServiceReference"
 							}
 						}
 					]
