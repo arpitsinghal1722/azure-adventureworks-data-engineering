@@ -56,7 +56,7 @@
 							"userProperties": [],
 							"typeProperties": {
 								"on": {
-									"value": "@concat(item().SourceSystem,'_',item().LoadType)",
+									"value": "@if(\n    and(\n        and(\n            equals(item().SourceSystem,'OnPremSQL'),\n            equals(item().LoadType,'FULL')\n        ),\n        and(\n            equals(item().SourceSchema,'Person'),\n            equals(item().SourceTable,'Address')\n        )\n    ),\n    'OnPremSQL_FULL_ADDRESS',\n    concat(item().SourceSystem,'_',item().LoadType)\n)",
 									"type": "Expression"
 								},
 								"cases": [
@@ -130,6 +130,69 @@
 																"value": "@concat(\n    item().SourceTable,\n    '_',\n    formatDateTime(utcnow(),'yyyyMMdd_HHmmss'),\n    '.parquet'\n)",
 																"type": "Expression"
 															}
+														}
+													}
+												]
+											},
+											{
+												"name": "CP_Address_To_ADLS",
+												"type": "Copy",
+												"dependsOn": [],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"source": {
+														"type": "SqlServerSource",
+														"sqlReaderQuery": {
+															"value": "\nSELECT\n    AddressID,\n    AddressLine1,\n    AddressLine2,\n    City,\n    StateProvinceID,\n    PostalCode,\n    SpatialLocation.STAsText() AS SpatialLocation,\n    rowguid,\n    ModifiedDate\nFROM Person.Address;",
+															"type": "Expression"
+														},
+														"queryTimeout": "02:00:00",
+														"partitionOption": "None"
+													},
+													"sink": {
+														"type": "ParquetSink",
+														"storeSettings": {
+															"type": "AzureBlobFSWriteSettings"
+														},
+														"formatSettings": {
+															"type": "ParquetWriteSettings"
+														}
+													},
+													"enableStaging": false,
+													"translator": {
+														"type": "TabularTranslator",
+														"typeConversion": true,
+														"typeConversionSettings": {
+															"allowDataTruncation": true,
+															"treatBooleanAsNumber": false
+														}
+													}
+												},
+												"inputs": [
+													{
+														"referenceName": "DS_SQL_AdventureWorks",
+														"type": "DatasetReference",
+														"parameters": {
+															"SchemaName": "Person",
+															"TableName": "Address"
+														}
+													}
+												],
+												"outputs": [
+													{
+														"referenceName": "DS_ADLS_Parquet",
+														"type": "DatasetReference",
+														"parameters": {
+															"ContainerName": "adventureworks",
+															"FolderPath": "landing/onprem/adventureworks/address/",
+															"FileName": "Address_@{formatDateTime(utcnow(),'yyyyMMdd_HHmmss')}.parquet"
 														}
 													}
 												]
@@ -753,6 +816,187 @@
 															},
 															"FileName": {
 																"value": "ExchangeRates_@{formatDateTime(utcnow(),'yyyyMMdd_HHmmss')}.parquet",
+																"type": "Expression"
+															}
+														}
+													}
+												]
+											}
+										]
+									},
+									{
+										"value": "OnPremSQL_FULL_ADDRESS",
+										"activities": [
+											{
+												"name": "CP_Address_To_ADLS_Special",
+												"type": "Copy",
+												"dependsOn": [],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"source": {
+														"type": "SqlServerSource",
+														"sqlReaderQuery": "SELECT\n    AddressID,\n    AddressLine1,\n    AddressLine2,\n    City,\n    StateProvinceID,\n    PostalCode,\n    SpatialLocation.STAsText() AS SpatialLocation,\n    rowguid,\n    ModifiedDate\nFROM Person.Address;",
+														"queryTimeout": "02:00:00",
+														"partitionOption": "None"
+													},
+													"sink": {
+														"type": "ParquetSink",
+														"storeSettings": {
+															"type": "AzureBlobFSWriteSettings"
+														},
+														"formatSettings": {
+															"type": "ParquetWriteSettings"
+														}
+													},
+													"enableStaging": false,
+													"translator": {
+														"type": "TabularTranslator",
+														"mappings": [
+															{
+																"source": {
+																	"name": "AddressID",
+																	"type": "Int32",
+																	"physicalType": "int"
+																},
+																"sink": {
+																	"name": "AddressID",
+																	"type": "Int32",
+																	"physicalType": "INT_32"
+																}
+															},
+															{
+																"source": {
+																	"name": "AddressLine1",
+																	"type": "String",
+																	"physicalType": "nvarchar"
+																},
+																"sink": {
+																	"name": "AddressLine1",
+																	"type": "String",
+																	"physicalType": "UTF8"
+																}
+															},
+															{
+																"source": {
+																	"name": "AddressLine2",
+																	"type": "String",
+																	"physicalType": "nvarchar"
+																},
+																"sink": {
+																	"name": "AddressLine2",
+																	"type": "String",
+																	"physicalType": "UTF8"
+																}
+															},
+															{
+																"source": {
+																	"name": "City",
+																	"type": "String",
+																	"physicalType": "nvarchar"
+																},
+																"sink": {
+																	"name": "City",
+																	"type": "String",
+																	"physicalType": "UTF8"
+																}
+															},
+															{
+																"source": {
+																	"name": "StateProvinceID",
+																	"type": "Int32",
+																	"physicalType": "int"
+																},
+																"sink": {
+																	"name": "StateProvinceID",
+																	"type": "Int32",
+																	"physicalType": "INT_32"
+																}
+															},
+															{
+																"source": {
+																	"name": "PostalCode",
+																	"type": "String",
+																	"physicalType": "nvarchar"
+																},
+																"sink": {
+																	"name": "PostalCode",
+																	"type": "String",
+																	"physicalType": "UTF8"
+																}
+															},
+															{
+																"source": {
+																	"name": "SpatialLocation",
+																	"type": "String",
+																	"physicalType": "nvarchar"
+																},
+																"sink": {
+																	"name": "SpatialLocation",
+																	"type": "String",
+																	"physicalType": "UTF8"
+																}
+															},
+															{
+																"source": {
+																	"name": "rowguid",
+																	"type": "Guid",
+																	"physicalType": "uniqueidentifier"
+																},
+																"sink": {
+																	"name": "rowguid",
+																	"type": "Guid",
+																	"physicalType": "UTF8"
+																}
+															},
+															{
+																"source": {
+																	"name": "ModifiedDate",
+																	"type": "DateTime",
+																	"physicalType": "datetime"
+																},
+																"sink": {
+																	"name": "ModifiedDate",
+																	"type": "DateTime",
+																	"physicalType": "INT_96"
+																}
+															}
+														],
+														"typeConversion": true,
+														"typeConversionSettings": {
+															"allowDataTruncation": true,
+															"treatBooleanAsNumber": false
+														}
+													}
+												},
+												"inputs": [
+													{
+														"referenceName": "DS_SQL_AdventureWorks",
+														"type": "DatasetReference",
+														"parameters": {
+															"SchemaName": "Person",
+															"TableName": "Address"
+														}
+													}
+												],
+												"outputs": [
+													{
+														"referenceName": "DS_ADLS_Parquet",
+														"type": "DatasetReference",
+														"parameters": {
+															"ContainerName": "adventureworks",
+															"FolderPath": {
+																"value": "@concat('landing/onprem/adventureworks/address/',formatDateTime(utcnow(),'yyyy/MM/dd'))",
+																"type": "Expression"
+															},
+															"FileName": {
+																"value": "@concat('Address_',formatDateTime(utcnow(),'yyyyMMdd_HHmmss'),'.parquet')",
 																"type": "Expression"
 															}
 														}
