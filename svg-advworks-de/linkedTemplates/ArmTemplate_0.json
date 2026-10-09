@@ -729,91 +729,6 @@
 																}
 															}
 														]
-													},
-													{
-														"name": "SP_AuditComplete_Full",
-														"type": "SqlServerStoredProcedure",
-														"dependsOn": [
-															{
-																"activity": "CP_Full_To_ADLS",
-																"dependencyConditions": [
-																	"Succeeded"
-																]
-															}
-														],
-														"policy": {
-															"timeout": "0.12:00:00",
-															"retry": 0,
-															"retryIntervalInSeconds": 30,
-															"secureOutput": false,
-															"secureInput": false
-														},
-														"userProperties": [],
-														"typeProperties": {
-															"storedProcedureName": "[[dbo].[usp_AuditComplete]",
-															"storedProcedureParameters": {
-																"CurrentWatermark": {
-																	"value": {
-																		"value": "@item().LastWatermarkValue",
-																		"type": "Expression"
-																	},
-																	"type": "String"
-																},
-																"ErrorMessage": {
-																	"value": {
-																		"value": "''",
-																		"type": "Expression"
-																	},
-																	"type": "String"
-																},
-																"PipelineRunId": {
-																	"value": {
-																		"value": "@pipeline().RunId",
-																		"type": "Expression"
-																	},
-																	"type": "String"
-																},
-																"RowsRead": {
-																	"value": {
-																		"value": "@activity('CP_Full_To_ADLS').output.rowsRead",
-																		"type": "Expression"
-																	},
-																	"type": "Int32"
-																},
-																"RowsRejected": {
-																	"value": {
-																		"value": "0",
-																		"type": "Expression"
-																	},
-																	"type": "Int32"
-																},
-																"RowsWritten": {
-																	"value": {
-																		"value": "@activity('CP_Full_To_ADLS').output.rowsCopied",
-																		"type": "Expression"
-																	},
-																	"type": "Int32"
-																},
-																"Status": {
-																	"value": {
-																		"value": "Succeeded",
-																		"type": "Expression"
-																	},
-																	"type": "String"
-																},
-																"TargetTable": {
-																	"value": {
-																		"value": "@concat(item().TargetContainer,'/',item().TargetFolder)",
-																		"type": "Expression"
-																	},
-																	"type": "String"
-																}
-															}
-														},
-														"linkedServiceName": {
-															"referenceName": "LS_SQL_Metadata",
-															"type": "LinkedServiceReference"
-														}
 													}
 												]
 											},
@@ -865,7 +780,10 @@
 															{
 																"referenceName": "DS_SQL_AdventureWorks",
 																"type": "DatasetReference",
-																"parameters": {}
+																"parameters": {
+																	"SchemaName": "Sales",
+																	"TableName": "SalesOrderHeader"
+																}
 															}
 														],
 														"outputs": [
@@ -1681,6 +1599,83 @@
 											"SourceTable": {
 												"value": {
 													"value": "@item().SourceTable",
+													"type": "Expression"
+												},
+												"type": "String"
+											},
+											"TargetTable": {
+												"value": {
+													"value": "@concat(item().TargetContainer,'/',item().TargetFolder)",
+													"type": "Expression"
+												},
+												"type": "String"
+											}
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "LS_SQL_Metadata",
+										"type": "LinkedServiceReference"
+									}
+								},
+								{
+									"name": "SP_AuditComplete_Common",
+									"type": "SqlServerStoredProcedure",
+									"dependsOn": [
+										{
+											"activity": "SW_LoadType",
+											"dependencyConditions": [
+												"Completed"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"storedProcedureName": "[[dbo].[usp_AuditComplete]",
+										"storedProcedureParameters": {
+											"CurrentWatermark": {
+												"value": {
+													"value": "@item().LastWatermarkValue",
+													"type": "Expression"
+												},
+												"type": "String"
+											},
+											"ErrorMessage": {
+												"value": {
+													"value": "''",
+													"type": "Expression"
+												},
+												"type": "String"
+											},
+											"PipelineRunId": {
+												"value": {
+													"value": "@pipeline().RunId",
+													"type": "Expression"
+												},
+												"type": "String"
+											},
+											"RowsRead": {
+												"type": "Int32"
+											},
+											"RowsRejected": {
+												"value": {
+													"value": "0",
+													"type": "Expression"
+												},
+												"type": "Int32"
+											},
+											"RowsWritten": {
+												"type": "Int32"
+											},
+											"Status": {
+												"value": {
+													"value": "@if(equals(activity('SW_LoadType').Status,'Succeeded'),'Succeeded','Failed')",
 													"type": "Expression"
 												},
 												"type": "String"
