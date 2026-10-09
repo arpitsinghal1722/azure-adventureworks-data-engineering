@@ -18,7 +18,7 @@
 					"source": {
 						"type": "SqlServerSource",
 						"sqlReaderQuery": {
-							"value": "SELECT *\nFROM dbo.IngestionConfig\nWHERE IsActive = 1\n  AND SourceSystem = 'AzureSQL';",
+							"value": "SELECT *\nFROM dbo.IngestionConfig\nWHERE IsActive = 1;\n  ",
 							"type": "Expression"
 						},
 						"queryTimeout": "02:00:00",
