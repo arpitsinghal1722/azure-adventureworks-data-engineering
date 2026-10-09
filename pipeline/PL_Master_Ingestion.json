@@ -1071,6 +1071,10 @@
 										"type": "String"
 									},
 									"RowsRead": {
+										"value": {
+											"value": "0",
+											"type": "Expression"
+										},
 										"type": "Int32"
 									},
 									"RowsRejected": {
@@ -1081,6 +1085,10 @@
 										"type": "Int32"
 									},
 									"RowsWritten": {
+										"value": {
+											"value": "0",
+											"type": "Expression"
+										},
 										"type": "Int32"
 									},
 									"Status": {
