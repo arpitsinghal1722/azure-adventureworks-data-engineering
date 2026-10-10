@@ -1137,7 +1137,7 @@
 										"storedProcedureParameters": {
 											"CurrentWatermark": {
 												"value": {
-													"value": "@item().LastWatermarkValue",
+													"value": "''",
 													"type": "Expression"
 												},
 												"type": "String"
